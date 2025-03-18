@@ -2,27 +2,24 @@ import React from 'react';
 import styled, { ThemeProvider } from 'styled-components';
 import ProductListing from './component/ProductListing';
 import { theme } from './theme/theme';
+import initState, { InitState } from './state/state';
+import stateReducer from './reducers/stateReducer';
 
-type product = {
+export type Product = {
   id: string;
   name: string;
   group: 'Laptop' | 'Tablet' | 'Mobile' | 'Accessory';
   msrp: number;
   price: number;
   status: string;
+  quantity: number;
 };
 
 const App: React.FC = () => {
-  const [productList, setProductList] = React.useState<product[]>([
-    {
-      id: '#',
-      name: 'aadit',
-      group: 'developer',
-      msrp: 5,
-      price: 10,
-      status: 'unemployed',
-    },
-  ]);
+  const [productList, setProductList] = React.useState<{
+    [key: string]: Product;
+  }>({});
+  const [state, dispatch] = React.useReducer(stateReducer, initState);
 
   React.useEffect(() => {
     fetch(
@@ -36,7 +33,7 @@ const App: React.FC = () => {
     <ThemeProvider theme={theme}>
       <Wrapper>
         <ProductListWrapper>
-          {productList.map((item, index) => {
+          {Object.values(productList).map((item) => {
             return (
               <ProductListing
                 id={item.id}
@@ -58,7 +55,6 @@ const Wrapper = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 100vw;
   padding: 2em;
   background: ${(props) => props.theme.light_blue};
   overflow-x: hidden;
@@ -66,6 +62,8 @@ const Wrapper = styled.div`
 
 const ProductListWrapper = styled.div`
   display: flex;
+  justify-content: center;
+  align-items: center;
   flex-wrap: wrap;
   gap: 1em;
 `;
