@@ -1,20 +1,38 @@
-import React from 'react';
+import React, { Dispatch } from 'react';
 import styled from 'styled-components';
+import { Product } from '../App';
+import { ActionType } from '../reducers/stateReducer';
+
+export type CartItem = Product & {
+  quantity: number;
+};
 
 interface ProductListingProps {
-  id: string;
-  name: string;
-  group: 'Laptop' | 'Tablet' | 'Mobile' | 'Accessory';
-  msrp: number;
-  price: number;
-  status: string;
+  item: Product | CartItem;
+  type: 'Search' | 'Cart';
+  dispatch: Dispatch<ActionType>;
 }
 
 const ProductListing: React.FC<ProductListingProps> = (props) => {
-  const { name, group, msrp, price, status } = props;
+  const { name, group, msrp, price, status } = props.item;
+  const dispatch = props.dispatch;
   const [quantity, setQuantity] = React.useState(1);
-  const handlePurchase = React.useCallback(() => {}, []);
-
+  const handlePurchase = React.useCallback(
+    (item: Product) => {
+      dispatch({
+        type: 'ADD_PRODUCT',
+        payload: { ...item, quantity: quantity },
+      });
+    },
+    [quantity],
+  );
+  const handleUpdate = React.useCallback((item: CartItem) => {
+    if (item.quantity <= 0) {
+      dispatch({ type: 'DELETE_PRODUCT', payload: { ...item, quantity: 1 } });
+    } else {
+      dispatch({ type: 'UPDATE_PRODUCT', payload: item });
+    }
+  }, []);
   return (
     <Wrapper>
       <NameTitle>Name:</NameTitle>
@@ -28,16 +46,35 @@ const ProductListing: React.FC<ProductListingProps> = (props) => {
       {status === 'Available' && (
         <>
           <QuantityTitle>Quantity:</QuantityTitle>
-          <Quantity type="number" min={1} defaultValue={1} />
+          <Quantity
+            type="number"
+            min={props.type === 'Search' ? 1 : 0}
+            defaultValue={
+              props.type === 'Search' ? 1 : (props.item as CartItem).quantity
+            }
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+              if (props.type !== 'Search') {
+                handleUpdate({
+                  ...props.item,
+                  quantity: Number(event.target.value),
+                });
+              } else {
+                console.log('Adding quantity:', Number(event.target.value));
+                setQuantity(Number(event.target.value));
+              }
+            }}
+          />
         </>
       )}
-      <PurchaseBtn
-        disabled={status === 'Unavailable'}
-        onClick={handlePurchase}
-        type="button"
-      >
-        {status === 'Unavailable' ? 'Sold Out' : 'Purchase'}
-      </PurchaseBtn>
+      {props.type === 'Search' && (
+        <PurchaseBtn
+          disabled={status === 'Unavailable'}
+          onClick={() => handlePurchase(props.item as Product)}
+          type="button"
+        >
+          {status === 'Unavailable' ? 'Sold Out' : 'Purchase'}
+        </PurchaseBtn>
+      )}
     </Wrapper>
   );
 };
@@ -45,6 +82,7 @@ const ProductListing: React.FC<ProductListingProps> = (props) => {
 export default ProductListing;
 
 const Wrapper = styled.div`
+  height: 300px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   border-radius: 5px;
@@ -52,7 +90,6 @@ const Wrapper = styled.div`
   color: ${(props) => props.theme.black};
   padding: 1em;
   box-sizing: border-box;
-  width: 25%;
   gap: 0.5em;
 `;
 
