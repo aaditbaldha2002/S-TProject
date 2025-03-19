@@ -12,7 +12,6 @@ const stateReducer = (state: InitState, action: ActionType): InitState => {
     case 'ADD_PRODUCT':
       const add_item = action.payload as CartItem;
       if (state.products[add_item.id]) {
-        console.log(state.products);
         return {
           ...state,
           products: {
@@ -27,7 +26,6 @@ const stateReducer = (state: InitState, action: ActionType): InitState => {
           totalItems: state.totalItems + add_item.quantity,
         };
       } else {
-        console.log(state.products);
         return {
           ...state,
           products: {
@@ -50,7 +48,6 @@ const stateReducer = (state: InitState, action: ActionType): InitState => {
           (updateProduct as CartItem).price -
           state.products[(updateProduct as CartItem).id].quantity *
             state.products[(updateProduct as CartItem).id].price);
-      console.log(state.products);
       return {
         ...state,
         products: {

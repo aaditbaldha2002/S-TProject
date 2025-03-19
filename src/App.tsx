@@ -15,13 +15,91 @@ export type Product = {
   status: string;
 };
 
-type TabName = 'Product List' | 'Cart';
+type TabName =
+  | 'Product List'
+  | 'Cart'
+  | 'Accessory'
+  | 'Laptop'
+  | 'Tablet'
+  | 'Mobile';
 const App: React.FC = () => {
   const [productList, setProductList] = React.useState<{
     [key: string]: Product[];
   }>({});
   const [state, dispatch] = React.useReducer(stateReducer, initState);
   const [currentTab, setCurrentTab] = React.useState<TabName>('Product List');
+  const tabNames: string[] = [
+    'Product List',
+    'Accessory',
+    'Laptop',
+    'Mobile',
+    'Tablet',
+    'Cart',
+  ];
+
+  const renderTabContent = React.useCallback(
+    (value: string) => {
+      switch (value) {
+        case 'Product List':
+          return (
+            <GridWrapper onWheel={(e) => e.stopPropagation()}>
+              {Object.values(productList).map((list) =>
+                list.map((item) => (
+                  <ProductListing
+                    key={item.id}
+                    item={item}
+                    type="Search"
+                    dispatch={dispatch}
+                  />
+                )),
+              )}
+            </GridWrapper>
+          );
+
+        case 'Cart':
+          return Object.keys(state.products).length > 0 ? (
+            <CartList onWheel={(e) => e.stopPropagation()}>
+              {Object.entries(state.products).map(([key, value]) => (
+                <CartItemWrapper key={key}>
+                  <ProductListing
+                    item={value}
+                    type="Cart"
+                    dispatch={dispatch}
+                  />
+                </CartItemWrapper>
+              ))}
+            </CartList>
+          ) : (
+            <CartList>
+              <CartItemWrapper style={{ textAlign: 'center' }}>
+                No cart items added
+              </CartItemWrapper>
+            </CartList>
+          );
+
+        case 'Accessory':
+        case 'Laptop':
+        case 'Mobile':
+        case 'Tablet':
+          return (
+            <GridWrapper onWheel={(e) => e.stopPropagation()}>
+              {Object.values(productList[value]).map((item) => (
+                <ProductListing
+                  key={item.id}
+                  item={item}
+                  type="Search"
+                  dispatch={dispatch}
+                />
+              ))}
+            </GridWrapper>
+          );
+
+        default:
+          return <p>No products available</p>;
+      }
+    },
+    [productList, currentTab, state.products],
+  );
 
   React.useEffect(() => {
     fetch(
@@ -46,11 +124,15 @@ const App: React.FC = () => {
       <Wrapper>
         <TabListWrapper>
           <TabList>
-            <Tab
-              name="Product List"
-              onClick={() => setCurrentTab('Product List')}
-            />
-            <Tab name="Cart" onClick={() => setCurrentTab('Cart')} />
+            {tabNames.map((value, index) => {
+              return (
+                <Tab
+                  key={index}
+                  name={value}
+                  onClick={() => setCurrentTab(value as TabName)}
+                />
+              );
+            })}
           </TabList>
           <TotalPrice>
             Total Price: {Math.max(0.0, Number(state.totalPrice.toFixed(2)))}
@@ -58,42 +140,13 @@ const App: React.FC = () => {
           <TotalItems>Total Items: {Math.max(0, state.totalItems)}</TotalItems>
         </TabListWrapper>
         <Divider />
-        {currentTab === 'Product List' && (
-          <TabWrapper>
-            <TabTitle>{currentTab}</TabTitle>
-            <GridWrapper>
-              {Object.values(productList).map((list) => {
-                return (
-                  <>
-                    {list.map((item, key) => (
-                      <ProductListing
-                        key={item.id}
-                        item={item}
-                        type="Search"
-                        dispatch={dispatch}
-                      />
-                    ))}
-                  </>
-                );
-              })}
-            </GridWrapper>
-          </TabWrapper>
-        )}
-        {currentTab === 'Cart' && (
-          <TabWrapper>
-            <TabTitle>{currentTab}</TabTitle>
-            <CartList>
-              {Object.entries(state.products).map(([key, value]) => (
-                <CartItemWrapper key={key}>
-                  <ProductListing
-                    item={value}
-                    type="Cart"
-                    dispatch={dispatch}
-                  />
-                </CartItemWrapper>
-              ))}
-            </CartList>
-          </TabWrapper>
+        {tabNames.map((value) =>
+          value === currentTab ? (
+            <TabWrapper key={value}>
+              <TabTitle>{currentTab}</TabTitle>
+              {renderTabContent(value)}
+            </TabWrapper>
+          ) : null,
         )}
       </Wrapper>
     </ThemeProvider>
@@ -103,6 +156,7 @@ const App: React.FC = () => {
 const Wrapper = styled.div`
   display: flex;
   justify-content: center;
+  flex-direction: column;
   align-items: center;
   padding: 2em;
   background: ${(props) => props.theme.light_blue};
@@ -114,18 +168,16 @@ const TabListWrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-self: stretch;
-  width: 25%;
   align-items: flex-start;
   position: relative;
 `;
 
 const TabList = styled.div`
   width: 100%;
-  position: sticky;
   top: 0;
   display: flex;
-  flex-direction: column;
-  gap: 2em;
+  flex-wrap: wrap;
+  gap: 0.5em;
 `;
 
 const TotalPrice = styled.div`
@@ -152,8 +204,8 @@ const Divider = styled.div`
 const TabWrapper = styled.div`
   display: flex;
   flex-direction: column;
-  width: 75%;
   align-self: stretch;
+  position: relative;
 `;
 
 const GridWrapper = styled.div`
@@ -161,13 +213,21 @@ const GridWrapper = styled.div`
   overflow-y: scroll;
   width: auto;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr;
   grid-template-rows: auto auto;
   justify-content: center;
   align-items: center;
   flex-wrap: wrap;
   gap: 1em;
   box-sizing: border-box;
+
+  @media (min-width: 700px) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  @media (min-width: 1035px) {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
 `;
 
 const TabTitle = styled.div`
@@ -185,17 +245,33 @@ const TabTitle = styled.div`
 const CartList = styled.div`
   width: 100%;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr;
   grid-template-rows: auto auto;
   flex-direction: column;
-  gap: 1em;
   height: 100vh;
   overflow-y: auto;
+
+  @media (min-width: 510px) {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1em;
+  }
 `;
 
 const CartItemWrapper = styled.div`
   grid-column-start: 2;
   grid-column-end: 3;
+
+  @media (min-width: 510px) {
+    grid-column-start: 1;
+    grid-column-end: 4;
+  }
+
+  @media (min-width: 610px) {
+    grid-column-start: 2;
+    grid-column-end: 3;
+    min-width: 510px;
+  }
+  /* text-align: center; */
 `;
 
 export default App;

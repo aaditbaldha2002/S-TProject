@@ -18,21 +18,32 @@ const ProductListing: React.FC<ProductListingProps> = (props) => {
   const dispatch = props.dispatch;
   const [quantity, setQuantity] = React.useState(1);
   const handlePurchase = React.useCallback(
-    (item: Product) => {
-      dispatch({
-        type: 'ADD_PRODUCT',
-        payload: { ...item, quantity: quantity },
-      });
+    (item: Product, quantity: number) => {
+      console.log(quantity);
+      if (Number(quantity) > 0) {
+        dispatch({
+          type: 'ADD_PRODUCT',
+          payload: { ...item, quantity: Number(quantity) },
+        });
+      }
     },
     [quantity],
   );
-  const handleUpdate = React.useCallback((item: CartItem) => {
-    if (item.quantity <= 0) {
-      dispatch({ type: 'DELETE_PRODUCT', payload: { ...item, quantity: 1 } });
-    } else {
-      dispatch({ type: 'UPDATE_PRODUCT', payload: item });
-    }
-  }, []);
+  const handleUpdate = React.useCallback(
+    (item: Product, quantity: string) => {
+      if (quantity === '') {
+        return;
+      } else if (Number(quantity) <= 0) {
+        dispatch({ type: 'DELETE_PRODUCT', payload: { ...item, quantity: 1 } });
+      } else {
+        dispatch({
+          type: 'UPDATE_PRODUCT',
+          payload: { ...item, quantity: Number(quantity) },
+        });
+      }
+    },
+    [quantity],
+  );
   return (
     <Wrapper>
       <NameTitle>Name:</NameTitle>
@@ -47,19 +58,22 @@ const ProductListing: React.FC<ProductListingProps> = (props) => {
         <>
           <QuantityTitle>Quantity:</QuantityTitle>
           <Quantity
+            required
             type="number"
             min={props.type === 'Search' ? 1 : 0}
             defaultValue={
               props.type === 'Search' ? 1 : (props.item as CartItem).quantity
             }
+            onWheel={(e) => e.stopPropagation()}
+            onKeyDown={(e) => {
+              if (['-', '+', 'e', 'E', '.'].includes(e.key)) {
+                e.preventDefault();
+              }
+            }}
             onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
               if (props.type !== 'Search') {
-                handleUpdate({
-                  ...props.item,
-                  quantity: Number(event.target.value),
-                });
+                handleUpdate(props.item, event.target.value);
               } else {
-                console.log('Adding quantity:', Number(event.target.value));
                 setQuantity(Number(event.target.value));
               }
             }}
@@ -69,7 +83,9 @@ const ProductListing: React.FC<ProductListingProps> = (props) => {
       {props.type === 'Search' && (
         <PurchaseBtn
           disabled={status === 'Unavailable'}
-          onClick={() => handlePurchase(props.item as Product)}
+          onClick={(event: React.MouseEvent<HTMLButtonElement>) =>
+            handlePurchase(props.item as Product, quantity)
+          }
           type="button"
         >
           {status === 'Unavailable' ? 'Sold Out' : 'Purchase'}
