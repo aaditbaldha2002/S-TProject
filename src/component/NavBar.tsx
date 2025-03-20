@@ -19,8 +19,6 @@ const NavBar: React.FC<NavBarProps> = (props) => {
 
 const Wrapper = styled.div`
   display: flex;
-  position: sticky;
-  top: 0;
   width: 100%;
   background: ${(props) => props.theme.black};
 `;

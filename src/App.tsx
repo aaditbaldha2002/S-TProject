@@ -134,16 +134,18 @@ const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <Wrapper>
-        <NavBar
-          items={state.totalItems}
-          onClick={() => setCurrentTab('Cart')}
-        />
-        <FilterByBar
-          activeTab={currentTab}
-          onClick={(name: string) => {
-            setCurrentTab(name as TabName);
-          }}
-        />
+        <StickyBars>
+          <NavBar
+            items={state.totalItems}
+            onClick={() => setCurrentTab('Cart')}
+          />
+          <FilterByBar
+            activeTab={currentTab}
+            onClick={(name: string) => {
+              setCurrentTab(name as TabName);
+            }}
+          />
+        </StickyBars>
         <Results>
           <TabTitle text={`Showing Results for ${currentTab}`} />
           <Divider />
@@ -159,48 +161,49 @@ const App: React.FC = () => {
 };
 
 const Wrapper = styled.div`
+  min-height: 100vh;
+  width: 100vw;
   display: flex;
-  height: 100vh;
-  justify-content: center;
   flex-direction: column;
-  align-items: center;
+  justify-content: flex-start;
   background: ${(props) => props.theme.light_blue};
-  overflow-x: hidden;
 `;
 
 const TabWrapper = styled.div`
+  flex: 1;
   display: flex;
   flex-direction: column;
-  align-self: stretch;
-  position: relative;
   box-sizing: border-box;
 `;
 
 const Results = styled.div`
+  flex: 1;
   width: 100%;
   display: flex;
-  flex: 1;
   flex-direction: column;
   padding: 0em 1em;
   box-sizing: border-box;
   gap: 1em;
 `;
 
+const StickyBars = styled.div`
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+`;
+
 const GridWrapper = styled.div`
-  height: 60vh;
+  width: 100%;
   overflow-y: auto;
-  overflow-x: hidden;
-  width: auto;
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: auto auto;
+  display: flex;
+  flex-wrap: wrap;
   justify-content: center;
   align-items: center;
-  flex-wrap: wrap;
   gap: 1em;
   padding-right: 1em;
   box-sizing: border-box;
-  flex-grow: 1;
 `;
 
 const CartWrapper = styled.div`
@@ -208,6 +211,9 @@ const CartWrapper = styled.div`
   gap: 1em;
   justify-content: space-between;
   align-items: flex-start;
+  @media (max-width: 615px) {
+    flex-direction: column-reverse;
+  }
 `;
 
 const NoItemsTitle = styled.div`

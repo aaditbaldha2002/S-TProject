@@ -18,21 +18,35 @@ const FilterByBar: React.FC<FilterByBarProps> = (props) => {
   return (
     <TabListWrapper>
       <TabList>
-        <Title>Filter By:</Title>
-        <Divider />
-        {tabNames.map((value, index) => {
-          return (
-            <>
-              <Tab
-                key={index}
-                name={value}
-                onClick={() => props.onClick(value)}
-                isActive={value === props.activeTab}
-              />
-              {index < tabNames.length && <Divider />}
-            </>
-          );
-        })}
+        {props.activeTab === 'Cart' ? (
+          <>
+            <Divider />
+            <Tab
+              name={'Go Back'}
+              onClick={() => props.onClick('All Products')}
+              isActive={false}
+            />
+            <Divider />
+          </>
+        ) : (
+          <>
+            <Title>Filter By:</Title>
+            <Divider />
+            {tabNames.map((value, index) => {
+              return (
+                <>
+                  <Tab
+                    key={index}
+                    name={value}
+                    onClick={() => props.onClick(value)}
+                    isActive={value === props.activeTab}
+                  />
+                  {index < tabNames.length && <Divider />}
+                </>
+              );
+            })}
+          </>
+        )}
       </TabList>
     </TabListWrapper>
   );
@@ -49,8 +63,8 @@ const TabListWrapper = styled.div`
 `;
 const TabList = styled.div`
   width: 100%;
-  top: 0;
   display: flex;
+  flex-wrap: wrap;
   overflow-x: auto;
   font-size: 1.2em;
   ::-webkit-scrollbar {

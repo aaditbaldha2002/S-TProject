@@ -1,5 +1,5 @@
 import React, { Dispatch } from 'react';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import { Product } from '../App';
 import { ActionType } from '../reducers/stateReducer';
 
@@ -45,7 +45,7 @@ const ProductListing: React.FC<ProductListingProps> = (props) => {
     [quantity],
   );
   return (
-    <Wrapper>
+    <Wrapper type={props.type}>
       <ProductImg src="#" alt="Product Image" />
       <ProductDescription>
         <Name>{name}</Name>
@@ -95,18 +95,37 @@ const ProductListing: React.FC<ProductListingProps> = (props) => {
 
 export default ProductListing;
 
-const Wrapper = styled.div`
+const Wrapper = styled.div<{ type: string }>`
+  width: 100%;
   display: flex;
+  flex-direction: column;
+  justify-content: left;
+  align-items: left;
   border-radius: 5px;
   border: 1px solid ${(props) => props.theme.black};
   color: ${(props) => props.theme.black};
   padding: 1em;
   box-sizing: border-box;
   gap: 1em;
+
+  ${(props) =>
+    props.type === 'Search'
+      ? css`
+          @media (min-width: 600px) {
+            flex-direction: row;
+          }
+        `
+      : css`
+          @media (min-width: 900px) {
+            flex-direction: row;
+          }
+        `}
 `;
 
 const ProductImg = styled.img`
-  width: 300px;
+  width: 100%;
+  max-width: 300px;
+  min-width: fit-content;
   height: 300px;
   border: 1px solid ${(props) => props.theme.black};
 `;
@@ -117,6 +136,7 @@ const ProductDescription = styled.div`
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  gap: 1em;
 `;
 
 const TextCell = styled.div`

@@ -6,7 +6,10 @@ interface TabTitleProps {
 }
 
 const TabTitle: React.FC<TabTitleProps> = (props) => {
-  return <Wrapper>{props.text}</Wrapper>;
+  const text = props.text;
+  const hasCart = text.toLowerCase().includes('cart');
+
+  return <Wrapper>{hasCart ? 'Your Cart' : props.text}</Wrapper>;
 };
 
 const Wrapper = styled.div`
