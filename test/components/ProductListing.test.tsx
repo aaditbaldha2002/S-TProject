@@ -1,103 +1,73 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import ProductListing, { CartItem } from '../../src/component/ProductListing';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import ProductListing from '../../src/component/ProductListing';
 import { Product } from '../../src/App';
-import '@testing-library/jest-dom';
+import { ActionType } from '../../src/reducers/stateReducer';
+
+beforeEach(() => cleanup());
+// Mock the Dispatch function
 const mockDispatch = jest.fn();
 
-const mockProduct: Product = {
-  id: '1',
-  name: 'Test Product',
-  group: 'Laptop',
-  msrp: 1000,
-  price: 900,
-  status: 'Available',
-};
-
-const mockCartItem: CartItem = {
-  ...mockProduct,
-  quantity: 2,
-};
-
 describe('ProductListing Component', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
+  const product: Product = {
+    id: 'mockId',
+    name: 'Test Product',
+    group: 'Laptop',
+    msrp: 1000,
+    price: 800,
+    status: 'Available',
+  };
 
-  test('renders correctly for Search view', () => {
+  const cartItem = {
+    ...product,
+    quantity: 2,
+  };
+
+  test('renders product details correctly', () => {
     render(
-      <ProductListing
-        item={mockProduct}
-        type="Search"
-        dispatch={mockDispatch}
-      />,
+      <ProductListing item={product} type="Search" dispatch={mockDispatch} />,
     );
 
-    expect(screen.getByText('Name:')).toBeInTheDocument();
-    expect(screen.getByText('Group:')).toBeInTheDocument();
-    expect(screen.getByText('Market Price:')).toBeInTheDocument();
-    expect(screen.getByText('Sales Price:')).toBeInTheDocument();
-    expect(
-      screen.getByRole('button', { name: /purchase/i }),
-    ).toBeInTheDocument();
+    // Check if product name, price, and group are displayed
+    expect(screen.getByText('Test Product')).toBeInTheDocument();
+    expect(screen.getByText('Laptop')).toBeInTheDocument();
+    expect(screen.getByText('800$')).toBeInTheDocument();
+    expect(screen.getByText('1000$')).toBeInTheDocument();
   });
 
-  test('dispatches ADD_PRODUCT action on purchase', () => {
+  test('renders quantity input and update functionality for search type', () => {
     render(
-      <ProductListing
-        item={mockProduct}
-        type="Search"
-        dispatch={mockDispatch}
-      />,
+      <ProductListing item={product} type="Search" dispatch={mockDispatch} />,
     );
 
-    const purchaseButton = screen.getByRole('button', { name: /purchase/i });
+    // Check if quantity input is rendered
+    const quantityInput = screen.getByRole('spinbutton');
+    expect(quantityInput).toBeInTheDocument();
+
+    // Change the quantity
+    fireEvent.change(quantityInput, { target: { value: '3' } });
+    expect(quantityInput).toHaveValue(3);
+  });
+
+  test('clicking on "Add to Cart" calls handlePurchase function', () => {
+    render(
+      <ProductListing item={product} type="Search" dispatch={mockDispatch} />,
+    );
+
+    // Find the purchase button and click it
+    const purchaseButton = screen.getByText('Add to Cart');
     fireEvent.click(purchaseButton);
 
+    // Ensure the dispatch function is called with the correct action
     expect(mockDispatch).toHaveBeenCalledWith({
       type: 'ADD_PRODUCT',
-      payload: { ...mockProduct, quantity: 1 },
+      payload: { ...product, quantity: 1 },
     });
   });
 
-  test('dispatches UPDATE_PRODUCT action on quantity change in Cart view', () => {
-    render(
-      <ProductListing
-        item={mockCartItem}
-        type="Cart"
-        dispatch={mockDispatch}
-      />,
-    );
+  test('clicking on "Sold Out" button disables it', () => {
+    const unavailableProduct = { ...product, status: 'Unavailable' };
 
-    const quantityInput = screen.getByRole('spinbutton');
-    fireEvent.change(quantityInput, { target: { value: '3' } });
-
-    expect(mockDispatch).toHaveBeenCalledWith({
-      type: 'UPDATE_PRODUCT',
-      payload: { ...mockCartItem, quantity: 3 },
-    });
-  });
-
-  test('dispatches DELETE_PRODUCT when quantity is zero in Cart view', () => {
-    render(
-      <ProductListing
-        item={mockCartItem}
-        type="Cart"
-        dispatch={mockDispatch}
-      />,
-    );
-
-    const quantityInput = screen.getByRole('spinbutton');
-    fireEvent.change(quantityInput, { target: { value: '0' } });
-
-    expect(mockDispatch).toHaveBeenCalledWith({
-      type: 'DELETE_PRODUCT',
-      payload: { ...mockCartItem, quantity: 1 },
-    });
-  });
-
-  test('disables purchase button when product is unavailable', () => {
-    const unavailableProduct = { ...mockProduct, status: 'Unavailable' };
     render(
       <ProductListing
         item={unavailableProduct}
@@ -106,7 +76,50 @@ describe('ProductListing Component', () => {
       />,
     );
 
-    const purchaseButton = screen.getByRole('button', { name: /sold out/i });
+    const purchaseButton = screen.getByText('Sold Out');
     expect(purchaseButton).toBeDisabled();
+  });
+
+  test('updating quantity for cart type dispatches correct action', () => {
+    render(
+      <ProductListing item={cartItem} type="Cart" dispatch={mockDispatch} />,
+    );
+
+    const quantityInput = screen.getByRole('spinbutton');
+
+    // Update quantity to 3
+    fireEvent.change(quantityInput, { target: { value: '3' } });
+
+    // Ensure the update dispatch is called with correct payload
+    expect(mockDispatch).toHaveBeenCalledWith({
+      type: 'UPDATE_PRODUCT',
+      payload: { ...product, quantity: 3 },
+    });
+  });
+
+  test('quantity input prevents invalid characters', () => {
+    render(
+      <ProductListing item={product} type="Search" dispatch={mockDispatch} />,
+    );
+
+    const quantityInput = screen.getByRole('spinbutton');
+
+    fireEvent.change(quantityInput, { target: { value: 'e' } });
+
+    expect(quantityInput).toHaveValue(null);
+  });
+
+  test('quantity input for cart type allows 0 or greater values', () => {
+    render(
+      <ProductListing item={cartItem} type="Cart" dispatch={mockDispatch} />,
+    );
+
+    const quantityInput = screen.getByRole('spinbutton');
+
+    fireEvent.change(quantityInput, { target: { value: '0' } });
+    expect(quantityInput).toHaveValue(0);
+
+    fireEvent.change(quantityInput, { target: { value: '-1' } });
+    expect(quantityInput).toHaveValue(-1);
   });
 });

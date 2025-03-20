@@ -45,6 +45,29 @@ const App: React.FC = () => {
   }>({});
 
   const handleActiveTabs = React.useCallback(() => {}, []);
+  const fetchProducts = React.useCallback(async () => {
+    try {
+      const response = await fetch(
+        'https://s3.us-east-1.amazonaws.com/assets.spotandtango/products.json',
+      );
+      const json: { [key: string]: Product } = await response.json();
+
+      console.log(json);
+
+      const temp: { [key: string]: Product[] } = {};
+
+      Object.values(json).forEach((item) => {
+        if (!temp[item.group]) {
+          temp[item.group] = [];
+        }
+        temp[item.group].push(item);
+      });
+
+      setProductList(temp);
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    }
+  }, []);
 
   const renderTabContent = React.useCallback(
     (value: string) => {
@@ -114,22 +137,8 @@ const App: React.FC = () => {
   );
 
   React.useEffect(() => {
-    fetch(
-      'https://s3.us-east-1.amazonaws.com/assets.spotandtango/products.json',
-    )
-      .then((response) => response.json())
-      .then((json: { [key: string]: Product }) => {
-        console.log(json);
-        let temp: { [key: string]: Product[] } = {};
-        Object.values(json).forEach((item) => {
-          if (!temp[item.group]) {
-            temp[item.group] = [];
-          }
-          temp[item.group].push(item);
-        });
-        setProductList(temp);
-      });
-  }, []);
+    fetchProducts();
+  }, [fetchProducts]);
 
   return (
     <ThemeProvider theme={theme}>
