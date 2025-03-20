@@ -46,51 +46,49 @@ const ProductListing: React.FC<ProductListingProps> = (props) => {
   );
   return (
     <Wrapper>
-      <NameTitle>Name:</NameTitle>
-      <Name>{name}</Name>
-      <GroupTitle>Group:</GroupTitle>
-      <Group>{group}</Group>
-      <MarketPriceTitle>Market Price:</MarketPriceTitle>
-      <MSRP>{msrp}</MSRP>
-      <PriceTitle>Sales Price:</PriceTitle>
-      <Price>{price}</Price>
-      {status === 'Available' && (
-        <>
-          <QuantityTitle>Quantity:</QuantityTitle>
-          <Quantity
-            required
-            type="number"
-            min={props.type === 'Search' ? 1 : 0}
-            defaultValue={
-              props.type === 'Search' ? 1 : (props.item as CartItem).quantity
+      <ProductImg src="#" alt="Product Image" />
+      <ProductDescription>
+        <Name>{name}</Name>
+        <Group>{group}</Group>
+        <Price>{price}$</Price>
+        <MSRP>{msrp}$</MSRP>
+        {status === 'Available' && (
+          <>
+            <Quantity
+              required
+              type="number"
+              min={props.type === 'Search' ? 1 : 0}
+              defaultValue={
+                props.type === 'Search' ? 1 : (props.item as CartItem).quantity
+              }
+              onWheel={(e) => e.stopPropagation()}
+              onKeyDown={(e) => {
+                if (['-', '+', 'e', 'E', '.'].includes(e.key)) {
+                  e.preventDefault();
+                }
+              }}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
+                if (props.type !== 'Search') {
+                  handleUpdate(props.item, event.target.value);
+                } else {
+                  setQuantity(Number(event.target.value));
+                }
+              }}
+            />
+          </>
+        )}
+        {props.type === 'Search' && (
+          <PurchaseBtn
+            disabled={status === 'Unavailable'}
+            onClick={(event: React.MouseEvent<HTMLButtonElement>) =>
+              handlePurchase(props.item as Product, quantity)
             }
-            onWheel={(e) => e.stopPropagation()}
-            onKeyDown={(e) => {
-              if (['-', '+', 'e', 'E', '.'].includes(e.key)) {
-                e.preventDefault();
-              }
-            }}
-            onChange={(event: React.ChangeEvent<HTMLInputElement>) => {
-              if (props.type !== 'Search') {
-                handleUpdate(props.item, event.target.value);
-              } else {
-                setQuantity(Number(event.target.value));
-              }
-            }}
-          />
-        </>
-      )}
-      {props.type === 'Search' && (
-        <PurchaseBtn
-          disabled={status === 'Unavailable'}
-          onClick={(event: React.MouseEvent<HTMLButtonElement>) =>
-            handlePurchase(props.item as Product, quantity)
-          }
-          type="button"
-        >
-          {status === 'Unavailable' ? 'Sold Out' : 'Purchase'}
-        </PurchaseBtn>
-      )}
+            type="button"
+          >
+            {status === 'Unavailable' ? 'Sold Out' : 'Add to Cart'}
+          </PurchaseBtn>
+        )}
+      </ProductDescription>
     </Wrapper>
   );
 };
@@ -98,74 +96,53 @@ const ProductListing: React.FC<ProductListingProps> = (props) => {
 export default ProductListing;
 
 const Wrapper = styled.div`
-  height: 300px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   border-radius: 5px;
   border: 1px solid ${(props) => props.theme.black};
   color: ${(props) => props.theme.black};
   padding: 1em;
   box-sizing: border-box;
-  gap: 0.5em;
+  gap: 1em;
 `;
 
-const NameTitle = styled.div`
-  grid-column-start: 1;
-  grid-column-end: 2;
-  grid-row: 1;
+const ProductImg = styled.img`
+  width: 300px;
+  height: 300px;
+  border: 1px solid ${(props) => props.theme.black};
 `;
+
+const ProductDescription = styled.div`
+  width: fit-content;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+`;
+
 const TextCell = styled.div`
-  text-align: center;
   font-size: 1em;
+  width: fit-content;
 `;
 
 const Name = styled(TextCell)`
-  grid-column: 2;
-  grid-row: 1;
+  font-size: 2em;
 `;
 
 const Group = styled(TextCell)`
-  grid-column: 2;
-  grid-row: 2;
+  font-size: 1.5em;
 `;
 
 const MSRP = styled(TextCell)`
-  grid-column: 2;
-  grid-row: 3;
+  font-size: 1.2em;
 `;
 
 const Price = styled(TextCell)`
-  grid-column: 2;
-  grid-row: 4;
-`;
-
-const GroupTitle = styled.div`
-  grid-column-start: 1;
-  grid-column-end: 2;
-  grid-row: 2;
-`;
-
-const MarketPriceTitle = styled.div`
-  grid-column-start: 1;
-  grid-column-end: 2;
-  grid-row: 3;
-`;
-
-const PriceTitle = styled.div`
-  grid-column-start: 1;
-  grid-column-end: 2;
-  grid-row: 4;
-`;
-
-const QuantityTitle = styled.div`
-  grid-column-start: 1;
-  grid-column-end: 2;
-  grid-row: 5;
-  width: 100%;
+  font-size: 1.7em;
 `;
 
 const PurchaseBtn = styled.button`
   all: unset;
+  width: fit-content;
   grid-column-start: 1;
   grid-column-end: 3;
   grid-row: 6;
@@ -185,11 +162,9 @@ const PurchaseBtn = styled.button`
 `;
 
 const Quantity = styled.input`
-  width: 100%;
+  width: fit-content;
   box-sizing: border-box;
   text-align: center;
   font-size: 1em;
-  grid-column-start: 2;
-  grid-column-end: 3;
-  grid-row: 5;
+  padding: 1em;
 `;

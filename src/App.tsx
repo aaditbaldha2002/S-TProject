@@ -4,7 +4,10 @@ import ProductListing from './component/ProductListing';
 import { theme } from './theme/theme';
 import initState from './state/state';
 import stateReducer from './reducers/stateReducer';
-import Tab from './component/Tab';
+import NavBar from './component/NavBar';
+import FilterByBar from './component/FilterByBar';
+import TabTitle from './component/TabTitle';
+import SubTotal from './component/SubTotal';
 
 export type Product = {
   id: string;
@@ -16,7 +19,7 @@ export type Product = {
 };
 
 type TabName =
-  | 'Product List'
+  | 'All Products'
   | 'Cart'
   | 'Accessory'
   | 'Laptop'
@@ -27,9 +30,9 @@ const App: React.FC = () => {
     [key: string]: Product[];
   }>({});
   const [state, dispatch] = React.useReducer(stateReducer, initState);
-  const [currentTab, setCurrentTab] = React.useState<TabName>('Product List');
+  const [currentTab, setCurrentTab] = React.useState<TabName>('All Products');
   const tabNames: string[] = [
-    'Product List',
+    'All Products',
     'Accessory',
     'Laptop',
     'Mobile',
@@ -37,10 +40,16 @@ const App: React.FC = () => {
     'Cart',
   ];
 
+  const [activeTabs, setActiveTabs] = React.useState<{
+    [key: number]: TabName;
+  }>({});
+
+  const handleActiveTabs = React.useCallback(() => {}, []);
+
   const renderTabContent = React.useCallback(
     (value: string) => {
       switch (value) {
-        case 'Product List':
+        case 'All Products':
           return (
             <GridWrapper onWheel={(e) => e.stopPropagation()}>
               {Object.values(productList).map((list) =>
@@ -58,23 +67,26 @@ const App: React.FC = () => {
 
         case 'Cart':
           return Object.keys(state.products).length > 0 ? (
-            <CartList onWheel={(e) => e.stopPropagation()}>
-              {Object.entries(state.products).map(([key, value]) => (
-                <CartItemWrapper key={key}>
+            <CartWrapper>
+              <GridWrapper onWheel={(e) => e.stopPropagation()}>
+                {Object.entries(state.products).map(([key, value]) => (
                   <ProductListing
+                    key={key}
                     item={value}
                     type="Cart"
                     dispatch={dispatch}
                   />
-                </CartItemWrapper>
-              ))}
-            </CartList>
+                ))}
+              </GridWrapper>
+              <SubTotal
+                totalPrice={state.totalPrice}
+                totalItems={state.totalItems}
+              />
+            </CartWrapper>
           ) : (
-            <CartList>
-              <CartItemWrapper style={{ textAlign: 'center' }}>
-                No cart items added
-              </CartItemWrapper>
-            </CartList>
+            <GridWrapper>
+              <NoItemsTitle>No cart items added</NoItemsTitle>
+            </GridWrapper>
           );
 
         case 'Accessory':
@@ -122,32 +134,25 @@ const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <Wrapper>
-        <TabListWrapper>
-          <TabList>
-            {tabNames.map((value, index) => {
-              return (
-                <Tab
-                  key={index}
-                  name={value}
-                  onClick={() => setCurrentTab(value as TabName)}
-                />
-              );
-            })}
-          </TabList>
-          <TotalPrice>
-            Total Price: {Math.max(0.0, Number(state.totalPrice.toFixed(2)))}
-          </TotalPrice>
-          <TotalItems>Total Items: {Math.max(0, state.totalItems)}</TotalItems>
-        </TabListWrapper>
-        <Divider />
-        {tabNames.map((value) =>
-          value === currentTab ? (
-            <TabWrapper key={value}>
-              <TabTitle>{currentTab}</TabTitle>
-              {renderTabContent(value)}
-            </TabWrapper>
-          ) : null,
-        )}
+        <NavBar
+          items={state.totalItems}
+          onClick={() => setCurrentTab('Cart')}
+        />
+        <FilterByBar
+          activeTab={currentTab}
+          onClick={(name: string) => {
+            setCurrentTab(name as TabName);
+          }}
+        />
+        <Results>
+          <TabTitle text={`Showing Results for ${currentTab}`} />
+          <Divider />
+          {tabNames.map((value) =>
+            value === currentTab ? (
+              <TabWrapper key={value}>{renderTabContent(value)}</TabWrapper>
+            ) : null,
+          )}
+        </Results>
       </Wrapper>
     </ThemeProvider>
   );
@@ -155,50 +160,12 @@ const App: React.FC = () => {
 
 const Wrapper = styled.div`
   display: flex;
+  height: 100vh;
   justify-content: center;
   flex-direction: column;
   align-items: center;
-  padding: 2em;
   background: ${(props) => props.theme.light_blue};
   overflow-x: hidden;
-  gap: 1em;
-`;
-
-const TabListWrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-self: stretch;
-  align-items: flex-start;
-  position: relative;
-`;
-
-const TabList = styled.div`
-  width: 100%;
-  top: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5em;
-`;
-
-const TotalPrice = styled.div`
-  display: flex;
-  width: 100%;
-  font-size: 1.5em;
-  color: ${(props) => props.theme.black};
-`;
-
-const TotalItems = styled.div`
-  display: flex;
-  width: 100%;
-  font-size: 1.5em;
-  color: ${(props) => props.theme.black};
-`;
-
-const Divider = styled.div`
-  display: flex;
-  align-self: stretch;
-  width: 2px;
-  border-right: 1px solid ${(props) => props.theme.black};
 `;
 
 const TabWrapper = styled.div`
@@ -206,11 +173,23 @@ const TabWrapper = styled.div`
   flex-direction: column;
   align-self: stretch;
   position: relative;
+  box-sizing: border-box;
+`;
+
+const Results = styled.div`
+  width: 100%;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  padding: 0em 1em;
+  box-sizing: border-box;
+  gap: 1em;
 `;
 
 const GridWrapper = styled.div`
-  height: 100vh;
-  overflow-y: scroll;
+  height: 60vh;
+  overflow-y: auto;
+  overflow-x: hidden;
   width: auto;
   display: grid;
   grid-template-columns: 1fr;
@@ -219,59 +198,26 @@ const GridWrapper = styled.div`
   align-items: center;
   flex-wrap: wrap;
   gap: 1em;
+  padding-right: 1em;
   box-sizing: border-box;
-
-  @media (min-width: 700px) {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  @media (min-width: 1035px) {
-    grid-template-columns: 1fr 1fr 1fr;
-  }
+  flex-grow: 1;
 `;
 
-const TabTitle = styled.div`
-  width: 100%;
+const CartWrapper = styled.div`
+  display: flex;
+  gap: 1em;
+  justify-content: space-between;
+  align-items: flex-start;
+`;
+
+const NoItemsTitle = styled.div`
+  font-size: 2em;
   text-align: center;
-  font-size: 1.5em;
-  font-weight: bold;
-  margin-bottom: 1em;
-  box-sizing: border-box;
-  padding: 1em;
-  background: ${(props) => props.theme.black};
-  color: ${(props) => props.theme.white};
 `;
 
-const CartList = styled.div`
+const Divider = styled.div`
   width: 100%;
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-rows: auto auto;
-  flex-direction: column;
-  height: 100vh;
-  overflow-y: auto;
-
-  @media (min-width: 510px) {
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 1em;
-  }
+  height: 1px;
+  border-bottom: 1px solid ${(props) => props.theme.black};
 `;
-
-const CartItemWrapper = styled.div`
-  grid-column-start: 2;
-  grid-column-end: 3;
-
-  @media (min-width: 510px) {
-    grid-column-start: 1;
-    grid-column-end: 4;
-  }
-
-  @media (min-width: 610px) {
-    grid-column-start: 2;
-    grid-column-end: 3;
-    min-width: 510px;
-  }
-  /* text-align: center; */
-`;
-
 export default App;

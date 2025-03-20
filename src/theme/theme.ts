@@ -6,4 +6,5 @@ export const theme = {
   blue_gray: '#84a4bb',
   gray: '#4e5c66',
   dark_gray: '#162733',
+  selected_blue_gray: '#4f7f99',
 };
