@@ -11,7 +11,7 @@ module.exports = {
   mode: 'development',
   devServer: {
     static: path.join(__dirname, 'dist'),
-    port: 8081,
+    port: 8082,
     hot: true,
     open: true,
   },
